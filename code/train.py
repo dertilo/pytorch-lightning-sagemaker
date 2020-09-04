@@ -20,9 +20,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     # fmt:off
-    parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
-    parser.add_argument('-m','--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--data_dir', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
+    output_data_dir = os.environ['SM_OUTPUT_DATA_DIR']
+    parser.add_argument('-o','--output-data-dir', type=str, default=output_data_dir)
+    parser.add_argument('--data_dir', type=str,default=os.environ["SM_INPUT_DIR"])
     # fmt:on
 
     parser = pl.Trainer.add_argparse_args(parser)
@@ -31,13 +31,13 @@ if __name__ == "__main__":
     kwargs = (
         {"batch_size": 32, "max_epochs": 2, "gpus": 0, "hidden_dim": 128}
         if DEBUG
-        else {}
+        else {"default_root_dir": output_data_dir}
     )
     args, _ = parser.parse_known_args(namespace=argparse.Namespace(**kwargs))
     pprint(args.__dict__)
 
     dm = MNISTDataModule(
-        num_workers=args.num_workers, data_dir=args.data_dir, batch_size=args.batch_size
+        num_workers=args.num_workers, data_dir=output_data_dir, batch_size=args.batch_size
     )
     model = LitMNIST(**vars(args))
 
