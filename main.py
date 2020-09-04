@@ -34,8 +34,8 @@ estimator = PyTorch(
   # these hyperparameters are passed to the main script as arguments and
   # can be overridden when fine tuning the algorithm
   hyperparameters={
-  'epochs': 2,
-  'batch-size': 32,
+  'max_epochs': 2,
+  'batch_size': 32,
   })
 
 # Call fit method on estimator, wich trains our model, passing training
