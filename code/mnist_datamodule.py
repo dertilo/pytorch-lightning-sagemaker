@@ -92,7 +92,7 @@ class MNISTDataModule(LightningDataModule):
         dataset_train, _ = random_split(
             dataset,
             [train_length - self.val_split, self.val_split],
-            generator=torch.Generator().manual_seed(self.seed)
+            # generator=torch.Generator().manual_seed(self.seed)
         )
         loader = DataLoader(
             dataset_train,
@@ -118,7 +118,7 @@ class MNISTDataModule(LightningDataModule):
         _, dataset_val = random_split(
             dataset,
             [train_length - self.val_split, self.val_split],
-            generator=torch.Generator().manual_seed(self.seed)
+            # generator=torch.Generator().manual_seed(self.seed)
         )
         loader = DataLoader(
             dataset_val,
