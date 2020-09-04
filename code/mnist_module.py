@@ -91,7 +91,7 @@ class LitMNIST(LightningModule):
     def add_model_specific_args(parent_parser):
         # fmt:off
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument('--batch_size', type=int, default=8)
+        parser.add_argument('--batch_size', type=int, default=32)
         parser.add_argument('--num_workers', type=int, default=2)
         parser.add_argument('--hidden_dim', type=int, default=128)
         parser.add_argument('--data_dir', type=str, default='mnist_data')
@@ -99,7 +99,9 @@ class LitMNIST(LightningModule):
         # fmt:on
         return parser
 
+
 seed_everything(42)
+
 
 def run_cli():
     # args
@@ -114,8 +116,12 @@ def run_cli():
     dm = MNISTDataModule(num_workers=args.num_workers, data_dir=args.data_dir)
 
     trainer = Trainer.from_argparse_args(args)
-    trainer.fit(model, datamodule=dm)
-    trainer.test(model, datamodule=dm)
+    trainer.fit(
+        model,
+        train_dataloader=dm.train_dataloader(args.batch_size),
+        val_dataloaders=dm.val_dataloader(args.batch_size),
+    )
+    trainer.test(model, test_dataloaders=dm.test_dataloader(args.batch_size))
 
 
 if __name__ == "__main__":  # pragma: no cover
