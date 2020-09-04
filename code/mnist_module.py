@@ -12,10 +12,19 @@ from torchvision.datasets import MNIST
 
 # based on: https://github.com/PyTorchLightning/pytorch-lightning-bolts/blob/master/pl_bolts/models/mnist_module.py
 
+
 class LitMNIST(LightningModule):
-    def __init__(self, hidden_dim=128, learning_rate=1e-3, batch_size=32, num_workers=4, data_dir='', **kwargs):
+    def __init__(
+        self,
+        hidden_dim=128,
+        learning_rate=1e-3,
+        batch_size=32,
+        num_workers=4,
+        data_dir="",
+        **kwargs
+    ):
         super().__init__()
-        self.save_hyperparameters() # this saves all the params into a hparams field, what kind of magic is this?
+        self.save_hyperparameters()  # this saves all the params into a hparams field, what kind of magic is this?
 
         self.l1 = torch.nn.Linear(28 * 28, self.hparams.hidden_dim)
         self.l2 = torch.nn.Linear(self.hparams.hidden_dim, 10)
@@ -33,46 +42,46 @@ class LitMNIST(LightningModule):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
-        tensorboard_logs = {'train_loss': loss}
+        tensorboard_logs = {"train_loss": loss}
         progress_bar_metrics = tensorboard_logs
         return {
-            'loss': loss,
-            'log': tensorboard_logs,
-            'progress_bar': progress_bar_metrics
+            "loss": loss,
+            "log": tensorboard_logs,
+            "progress_bar": progress_bar_metrics,
         }
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         acc = accuracy(y_hat, y)
-        return {'val_loss': F.cross_entropy(y_hat, y),"acc":acc}
+        return {"val_loss": F.cross_entropy(y_hat, y), "acc": acc}
 
     def validation_epoch_end(self, outputs):
-        acc = torch.stack([x['acc'] for x in outputs]).mean()
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        tensorboard_logs = {'val_loss': avg_loss,'val_acc': acc}
+        acc = torch.stack([x["acc"] for x in outputs]).mean()
+        avg_loss = torch.stack([x["val_loss"] for x in outputs]).mean()
+        tensorboard_logs = {"val_loss": avg_loss, "val_acc": acc}
         progress_bar_metrics = tensorboard_logs
         return {
-            'val_loss': avg_loss,
-            'log': tensorboard_logs,
-            'progress_bar': progress_bar_metrics
+            "val_loss": avg_loss,
+            "log": tensorboard_logs,
+            "progress_bar": progress_bar_metrics,
         }
 
     def test_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         acc = accuracy(y_hat, y)
-        return {'test_loss': F.cross_entropy(y_hat, y),'acc': acc}
+        return {"test_loss": F.cross_entropy(y_hat, y), "acc": acc}
 
     def test_epoch_end(self, outputs):
-        acc = torch.stack([x['acc'] for x in outputs]).mean()
-        avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
-        tensorboard_logs = {'test_loss': avg_loss,'test_acc': acc}
+        acc = torch.stack([x["acc"] for x in outputs]).mean()
+        avg_loss = torch.stack([x["test_loss"] for x in outputs]).mean()
+        tensorboard_logs = {"test_loss": avg_loss, "test_acc": acc}
         progress_bar_metrics = tensorboard_logs
         return {
-            'test_loss': avg_loss,
-            'log': tensorboard_logs,
-            'progress_bar': progress_bar_metrics
+            "test_loss": avg_loss,
+            "log": tensorboard_logs,
+            "progress_bar": progress_bar_metrics,
         }
 
     def configure_optimizers(self):
@@ -80,14 +89,14 @@ class LitMNIST(LightningModule):
 
     @staticmethod
     def add_model_specific_args(parent_parser):
-        #fmt:off
+        # fmt:off
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
         parser.add_argument('--batch_size', type=int, default=32)
         parser.add_argument('--num_workers', type=int, default=4)
         parser.add_argument('--hidden_dim', type=int, default=128)
         parser.add_argument('--data_dir', type=str, default='mnist_data')
         parser.add_argument('--learning_rate', type=float, default=0.0001)
-        #fmt:on
+        # fmt:on
         return parser
 
 
@@ -99,17 +108,16 @@ def run_cli():
     args = parser.parse_args()
 
     args.max_epochs = 4
-    args.hidden_dim = 66
     model = LitMNIST(**vars(args))
 
     dm = MNISTDataModule(num_workers=args.num_workers, data_dir=args.data_dir)
 
     trainer = Trainer.from_argparse_args(args)
-    trainer.fit(model,datamodule=dm)
-    trainer.test(model,datamodule=dm)
+    trainer.fit(model, datamodule=dm)
+    trainer.test(model, datamodule=dm)
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     run_cli()
     """
     {'test_acc': tensor(0.9351), 'test_loss': tensor(0.2242)}
