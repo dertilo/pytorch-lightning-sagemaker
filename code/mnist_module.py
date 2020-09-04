@@ -5,9 +5,6 @@ import torch
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.metrics.functional import accuracy
 from torch.nn import functional as F
-from torch.utils.data import DataLoader, random_split
-from torchvision import transforms
-from torchvision.datasets import MNIST
 
 # based on: https://github.com/PyTorchLightning/pytorch-lightning-bolts/blob/master/pl_bolts/models/mnist_module.py
 from mnist_datamodule import MNISTDataModule
@@ -94,7 +91,6 @@ class LitMNIST(LightningModule):
         parser.add_argument('--batch_size', type=int, default=32)
         parser.add_argument('--num_workers', type=int, default=2)
         parser.add_argument('--hidden_dim', type=int, default=128)
-        parser.add_argument('--data_dir', type=str, default='mnist_data')
         parser.add_argument('--learning_rate', type=float, default=0.001)
         # fmt:on
         return parser
@@ -115,7 +111,7 @@ def run_cli():
     model = LitMNIST(**vars(args))
 
     dm = MNISTDataModule(
-        num_workers=args.num_workers, data_dir=args.data_dir, batch_size=args.batch_size
+        num_workers=args.num_workers, data_dir="mnist_data", batch_size=args.batch_size
     )
 
     trainer = Trainer.from_argparse_args(args)

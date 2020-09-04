@@ -22,8 +22,7 @@ if __name__ == "__main__":
     # fmt:off
     parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
     parser.add_argument('-m','--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('-tr','--train', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
-    parser.add_argument('-te','--test', type=str, default=os.environ['SM_CHANNEL_TEST'])
+    parser.add_argument('--data_dir', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
     # fmt:on
 
     parser = pl.Trainer.add_argparse_args(parser)
