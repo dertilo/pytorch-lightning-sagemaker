@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 
 import torch
 from pl_bolts.datamodules import MNISTDataModule
-from pytorch_lightning import LightningModule, Trainer
+from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.metrics.functional import accuracy
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
@@ -91,14 +91,15 @@ class LitMNIST(LightningModule):
     def add_model_specific_args(parent_parser):
         # fmt:off
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument('--batch_size', type=int, default=32)
-        parser.add_argument('--num_workers', type=int, default=4)
+        parser.add_argument('--batch_size', type=int, default=8)
+        parser.add_argument('--num_workers', type=int, default=2)
         parser.add_argument('--hidden_dim', type=int, default=128)
         parser.add_argument('--data_dir', type=str, default='mnist_data')
-        parser.add_argument('--learning_rate', type=float, default=0.0001)
+        parser.add_argument('--learning_rate', type=float, default=0.001)
         # fmt:on
         return parser
 
+seed_everything(42)
 
 def run_cli():
     # args
@@ -107,7 +108,7 @@ def run_cli():
     parser = LitMNIST.add_model_specific_args(parser)
     args = parser.parse_args()
 
-    args.max_epochs = 4
+    args.max_epochs = 2
     model = LitMNIST(**vars(args))
 
     dm = MNISTDataModule(num_workers=args.num_workers, data_dir=args.data_dir)
@@ -120,5 +121,5 @@ def run_cli():
 if __name__ == "__main__":  # pragma: no cover
     run_cli()
     """
-    {'test_acc': tensor(0.9351), 'test_loss': tensor(0.2242)}
+    {'test_acc': tensor(0.8718), 'test_loss': tensor(0.3433)}
     """
