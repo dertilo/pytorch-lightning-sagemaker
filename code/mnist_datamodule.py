@@ -17,6 +17,7 @@ class MNISTDataModule(LightningDataModule):
             num_workers: int = 16,
             normalize: bool = False,
             seed: int = 42,
+            batch_size=32,
             *args,
             **kwargs,
     ):
@@ -53,6 +54,7 @@ class MNISTDataModule(LightningDataModule):
             normalize: If true applies image normalize
         """
         super().__init__(*args, **kwargs)
+        self.batch_size = batch_size
         self.dims = (1, 28, 28)
         self.data_dir = data_dir
         self.val_split = val_split
@@ -75,7 +77,7 @@ class MNISTDataModule(LightningDataModule):
         MNIST(self.data_dir, train=True, download=True, transform=transform_lib.ToTensor())
         MNIST(self.data_dir, train=False, download=True, transform=transform_lib.ToTensor())
 
-    def train_dataloader(self, batch_size=32, transforms=None):
+    def train_dataloader(self, transforms=None):
         """
         MNIST train set removes a subset to use for validation
 
@@ -94,7 +96,7 @@ class MNISTDataModule(LightningDataModule):
         )
         loader = DataLoader(
             dataset_train,
-            batch_size=batch_size,
+            batch_size=self.batch_size,
             shuffle=True,
             num_workers=self.num_workers,
             drop_last=True,
@@ -102,7 +104,7 @@ class MNISTDataModule(LightningDataModule):
         )
         return loader
 
-    def val_dataloader(self, batch_size=32, transforms=None):
+    def val_dataloader(self, transforms=None):
         """
         MNIST val set uses a subset of the training set for validation
 
@@ -120,7 +122,7 @@ class MNISTDataModule(LightningDataModule):
         )
         loader = DataLoader(
             dataset_val,
-            batch_size=batch_size,
+            batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
             drop_last=True,
@@ -128,7 +130,7 @@ class MNISTDataModule(LightningDataModule):
         )
         return loader
 
-    def test_dataloader(self, batch_size=32, transforms=None):
+    def test_dataloader(self, transforms=None):
         """
         MNIST test set uses the test split
 
@@ -141,7 +143,7 @@ class MNISTDataModule(LightningDataModule):
         dataset = MNIST(self.data_dir, train=False, download=False, transform=transforms)
         loader = DataLoader(
             dataset,
-            batch_size=batch_size,
+            batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
             drop_last=True,
