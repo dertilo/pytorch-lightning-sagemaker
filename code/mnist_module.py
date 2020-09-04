@@ -2,7 +2,6 @@ import os
 from argparse import ArgumentParser
 
 import torch
-from pl_bolts.datamodules import MNISTDataModule
 from pytorch_lightning import LightningModule, Trainer, seed_everything
 from pytorch_lightning.metrics.functional import accuracy
 from torch.nn import functional as F
@@ -11,6 +10,7 @@ from torchvision import transforms
 from torchvision.datasets import MNIST
 
 # based on: https://github.com/PyTorchLightning/pytorch-lightning-bolts/blob/master/pl_bolts/models/mnist_module.py
+from mnist_datamodule import MNISTDataModule
 
 
 class LitMNIST(LightningModule):
@@ -111,17 +111,16 @@ def run_cli():
     args = parser.parse_args()
 
     args.max_epochs = 2
+    args.batch_size = 32
     model = LitMNIST(**vars(args))
 
-    dm = MNISTDataModule(num_workers=args.num_workers, data_dir=args.data_dir)
+    dm = MNISTDataModule(
+        num_workers=args.num_workers, data_dir=args.data_dir, batch_size=args.batch_size
+    )
 
     trainer = Trainer.from_argparse_args(args)
-    trainer.fit(
-        model,
-        train_dataloader=dm.train_dataloader(args.batch_size),
-        val_dataloaders=dm.val_dataloader(args.batch_size),
-    )
-    trainer.test(model, test_dataloaders=dm.test_dataloader(args.batch_size))
+    trainer.fit(model, datamodule=dm)
+    trainer.test(model, datamodule=dm)
 
 
 if __name__ == "__main__":  # pragma: no cover
