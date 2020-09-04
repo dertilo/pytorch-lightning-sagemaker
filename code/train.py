@@ -9,7 +9,7 @@ from mnist_module import LitMNIST
 from mnist_datamodule import MNISTDataModule
 
 seed_everything(42)
-DEBUG = True
+DEBUG = False
 
 if __name__ == "__main__":
     if DEBUG:
@@ -29,7 +29,11 @@ if __name__ == "__main__":
     parser = pl.Trainer.add_argparse_args(parser)
     parser = LitMNIST.add_model_specific_args(parser)
 
-    kwargs = {"batch_size": 32, "max_epochs": 2, "gpus": 0, "hidden_dim": 128}
+    kwargs = (
+        {"batch_size": 32, "max_epochs": 2, "gpus": 0, "hidden_dim": 128}
+        if DEBUG
+        else {}
+    )
     args, _ = parser.parse_known_args(namespace=argparse.Namespace(**kwargs))
     pprint(args.__dict__)
 
