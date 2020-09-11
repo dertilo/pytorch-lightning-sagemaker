@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # fmt:off
     output_data_dir = os.environ['SM_OUTPUT_DATA_DIR']
     parser.add_argument('-o','--output-data-dir', type=str, default=output_data_dir)
-    parser.add_argument('--data_dir', type=str,default=os.environ["SM_INPUT_DIR"])
+    parser.add_argument('--data_dir', type=str,default=os.environ["SM_CHANNEL_TRAINING"])
     # fmt:on
 
     parser = pl.Trainer.add_argparse_args(parser)
@@ -37,7 +37,10 @@ if __name__ == "__main__":
     pprint(args.__dict__)
 
     dm = MNISTDataModule(
-        num_workers=args.num_workers, data_dir=output_data_dir, batch_size=args.batch_size
+        num_workers=args.num_workers,
+        data_dir=args.data_dir,
+        output_data_dir=output_data_dir,
+        batch_size=args.batch_size,
     )
     model = LitMNIST(**vars(args))
 
