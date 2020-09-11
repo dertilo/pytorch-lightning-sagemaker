@@ -8,10 +8,10 @@ from sagemaker.pytorch import PyTorch
 # Initializes SageMaker session which holds context data
 sagemaker_session = sagemaker.Session()
 bucket_name = sagemaker_session.default_bucket()
-
 # The bucket containig our input data
 # bucket = f's3://{bucket_name}'
-bucket = 's3://sagemaker-eu-central-1-706022464121/pytorch-training-2020-09-11-08-51-53-189/output'
+# bucket = 's3://sagemaker-eu-central-1-706022464121/pytorch-training-2020-09-11-08-51-53-189/output'
+bucket = 's3://sagemaker-eu-central-1-706022464121/pytorch-training-2020-09-11-10-18-40-345'
 
 # The IAM Role which SageMaker will impersonate to run the estimator
 # Remember you cannot use sagemaker.get_execution_role()
