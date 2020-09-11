@@ -79,15 +79,14 @@ class MNISTDataModule(LightningDataModule):
         """
         Saves MNIST files to data_dir
         """
-        os.system("tar xzf %s -C %s" % (self.data_dir+"/output.tar.gz", self.data_dir))
         try:
+            os.system("tar xzf %s -C %s" % (self.data_dir+"/output.tar.gz", self.data_dir))
             MNIST(self.data_dir, train=True, download=False, transform=transform_lib.ToTensor())
             MNIST(self.data_dir, train=False, download=False, transform=transform_lib.ToTensor())
         except:
-            data_train = MNIST(self.output_data_dir, train=True, download=True, transform=transform_lib.ToTensor())
-            data_test = MNIST(self.output_data_dir, train=False, download=True, transform=transform_lib.ToTensor())
-            shutil.rmtree(data_train.raw_folder)
-            shutil.rmtree(data_test.raw_folder)
+            m = MNIST(self.output_data_dir, train=True, download=True, transform=transform_lib.ToTensor())
+            MNIST(self.output_data_dir, train=False, download=True, transform=transform_lib.ToTensor())
+            shutil.rmtree(m.raw_folder)
 
     def train_dataloader(self, transforms=None):
         """
