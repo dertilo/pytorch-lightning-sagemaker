@@ -1,0 +1,15 @@
+name: sagemaker
+channels:
+  - defaults
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.8
+  - boto3
+  - pytorch=1.4.0
+  - pytorch-lightning=0.9.0
+  - pip
+  - pip:
+      - sagemaker
+      - pandas
+
