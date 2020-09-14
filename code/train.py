@@ -2,6 +2,8 @@ import argparse
 import os
 from pprint import pprint
 import logging
+from pytorch_lightning.loggers import WandbLogger
+
 logging.basicConfig(level=logging.DEBUG)
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything, Callback
@@ -13,10 +15,14 @@ from mnist_datamodule import MNISTDataModule
 
 seed_everything(42)
 DEBUG = False
-logging.info("this is a test")
 # INSTANCE_ACTION = 'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && curl -H "X-aws-ec2-metadata-token: $TOKEN" –v http://169.254.169.254/latest/meta-data/spot/instance-action'  # see: https://aws.amazon.com/blogs/compute/best-practices-for-handling-ec2-spot-instance-interruptions/
 # INSTANCE_META_DATA = 'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/'  # see: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
 # see ec2_metadata package!
+
+with open("secrets.env", "r") as f:
+    key = f.readline().strip("\n").replace("WANDB_API_KEY=", "")
+os.environ["WANDB_API_KEY"] = key
+
 
 class InterruptionWarning(Callback):
     ALL_GOOD = 0
@@ -25,7 +31,7 @@ class InterruptionWarning(Callback):
     def on_train_batch_end(
         self, trainer, pl_module: LitMNIST, batch, batch_idx, dataloader_idx
     ):
-        if batch_idx == 10:
+        if batch_idx % 10 == 0:
             status = self._get_status()
             trainer.callback_metrics["interruption_warning"] = status
         else:
@@ -90,6 +96,10 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
     )
     model = LitMNIST(**vars(args))
+    args.logger = WandbLogger(
+        name="test",
+        project="mnist",
+    )
 
     trainer = pl.Trainer.from_argparse_args(args)
     trainer.callbacks.append(InterruptionWarning())
