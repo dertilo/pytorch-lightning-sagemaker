@@ -2,16 +2,18 @@
 import json
 import boto3
 import sagemaker
+import wandb
 from sagemaker.pytorch import PyTorch
 # based on: https://github.com/aletheia/mnist_pl_sagemaker/blob/master/main.py
-
+source_dir = 'code'
+wandb.sagemaker_auth(path=source_dir)
 # Initializes SageMaker session which holds context data
 sagemaker_session = sagemaker.Session()
 bucket_name = sagemaker_session.default_bucket()
 # The bucket containig our input data
 # bucket = f's3://{bucket_name}'
-# bucket = 's3://sagemaker-eu-central-1-706022464121/pytorch-training-2020-09-11-08-51-53-189/output'
-bucket = 's3://sagemaker-eu-central-1-706022464121/pytorch-training-2020-09-11-10-18-40-345'
+bucket = 's3://sagemaker-eu-central-1-706022464121/pytorch-training-2020-09-14-06-58-59-849/output'
+# bucket = 's3://sagemaker-eu-central-1-706022464121/pytorch-training-2020-09-11-10-18-40-345'
 
 # The IAM Role which SageMaker will impersonate to run the estimator
 # Remember you cannot use sagemaker.get_execution_role()
@@ -27,15 +29,18 @@ estimator = PyTorch(
   # path of the folder containing training code. It could also contain a
   # requirements.txt file with all the dependencies that needs
   # to be installed before running
-  source_dir='code',
+  source_dir=source_dir,
   role=role,
   framework_version='1.4.0',
   py_version="py3",
   instance_count=1,
-  instance_type="local",# 'ml.p2.xlarge',
-  # instance_type="ml.c5.xlarge",#"ml.g4dn.xlarge",# 'ml.p2.xlarge',
+  # instance_type="local",# 'ml.p2.xlarge',
+  instance_type="ml.c5.xlarge",#"ml.g4dn.xlarge",# 'ml.p2.xlarge',
   # these hyperparameters are passed to the main script as arguments and
   # can be overridden when fine tuning the algorithm
+  use_spot_instances = True,
+  max_wait = 24 * 60 * 60, # seconds; see max_run
+  # checkpoint_s3_uri = ...
   hyperparameters={
   'max_epochs': 2,
   'batch_size': 32,

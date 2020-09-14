@@ -1,7 +1,8 @@
 import argparse
 import os
 from pprint import pprint
-
+import logging
+logging.basicConfig(level=logging.DEBUG)
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything, Callback
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
@@ -11,8 +12,8 @@ from mnist_module import LitMNIST
 from mnist_datamodule import MNISTDataModule
 
 seed_everything(42)
-DEBUG = True
-
+DEBUG = False
+logging.info("this is a test")
 # INSTANCE_ACTION = 'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && curl -H "X-aws-ec2-metadata-token: $TOKEN" –v http://169.254.169.254/latest/meta-data/spot/instance-action'  # see: https://aws.amazon.com/blogs/compute/best-practices-for-handling-ec2-spot-instance-interruptions/
 # INSTANCE_META_DATA = 'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/'  # see: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
 # see ec2_metadata package!
@@ -31,18 +32,21 @@ class InterruptionWarning(Callback):
             trainer.callback_metrics["interruption_warning"] = self.ALL_GOOD
 
     def _get_status(self):
-        resp = ec2metadata._get_url(
-            ec2_metadata.METADATA_URL + "instance-action", allow_404=True
-        )
-        # see: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
-        if resp.status_code == 404:
-            # This URI returns a 404 response code when the instance is not marked for interruption
+        try:
+            resp = ec2metadata._get_url(
+                ec2_metadata.METADATA_URL + "instance-action", allow_404=True
+            )
+            # see: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+            if resp.status_code == 404:
+                # This URI returns a 404 response code when the instance is not marked for interruption
+                status = self.ALL_GOOD
+            elif resp.status_code == 200:
+                # If the instance is marked for interruption, you receive a 200 response code.
+                status = self.INTERRUPTION_WARNING
+            else:
+                status = self.INTERRUPTION_WARNING
+        except:
             status = self.ALL_GOOD
-        elif resp.status_code == 200:
-            # If the instance is marked for interruption, you receive a 200 response code.
-            status = self.INTERRUPTION_WARNING
-        else:
-            status = self.INTERRUPTION_WARNING
         return status
 
 
@@ -57,13 +61,11 @@ if __name__ == "__main__":
         os.environ["SM_MODEL_DIR"] = "/tmp/model_dir"
         os.environ["SM_CHANNEL_TRAINING"] = "/tmp/channel_train"
         os.environ["SM_CHANNEL_TEST"] = "/tmp/channel_test"
-        checkpoint_path = "/tmp/checkpoints/"
-    else:
-        checkpoint_path = "/opt/ml/checkpoints/"
 
     parser = argparse.ArgumentParser()
     # fmt:off
     output_data_dir = os.environ['SM_OUTPUT_DATA_DIR']
+    checkpoint_path = output_data_dir + "/checkpoints/"
     parser.add_argument('-o','--output-data-dir', type=str, default=output_data_dir)
     parser.add_argument('--data_dir', type=str,default=os.environ["SM_CHANNEL_TRAINING"])
     parser.add_argument('--checkpoint_path', type=str, default=checkpoint_path)
