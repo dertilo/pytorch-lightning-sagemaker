@@ -5,23 +5,45 @@ from pprint import pprint
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything, Callback
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-
+import ec2_metadata
+from ec2_metadata import ec2_metadata as ec2metadata
 from mnist_module import LitMNIST
 from mnist_datamodule import MNISTDataModule
 
 seed_everything(42)
 DEBUG = True
 
+# INSTANCE_ACTION = 'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && curl -H "X-aws-ec2-metadata-token: $TOKEN" –v http://169.254.169.254/latest/meta-data/spot/instance-action'  # see: https://aws.amazon.com/blogs/compute/best-practices-for-handling-ec2-spot-instance-interruptions/
+# INSTANCE_META_DATA = 'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/'  # see: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+# see ec2_metadata package!
 
 class InterruptionWarning(Callback):
+    ALL_GOOD = 0
+    INTERRUPTION_WARNING = 1
+
     def on_train_batch_end(
         self, trainer, pl_module: LitMNIST, batch, batch_idx, dataloader_idx
     ):
         if batch_idx == 10:
-            print("interrupt training")
-            trainer.callback_metrics["interruption_warning"] = 1.0
+            status = self._get_status()
+            trainer.callback_metrics["interruption_warning"] = status
         else:
-            trainer.callback_metrics["interruption_warning"] = 0.0
+            trainer.callback_metrics["interruption_warning"] = self.ALL_GOOD
+
+    def _get_status(self):
+        resp = ec2metadata._get_url(
+            ec2_metadata.METADATA_URL + "instance-action", allow_404=True
+        )
+        # see: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+        if resp.status_code == 404:
+            # This URI returns a 404 response code when the instance is not marked for interruption
+            status = self.ALL_GOOD
+        elif resp.status_code == 200:
+            # If the instance is marked for interruption, you receive a 200 response code.
+            status = self.INTERRUPTION_WARNING
+        else:
+            status = self.INTERRUPTION_WARNING
+        return status
 
 
 class ModelCheckpointOnBatchEnd(ModelCheckpoint):
