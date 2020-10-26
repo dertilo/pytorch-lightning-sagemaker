@@ -100,7 +100,6 @@ seed_everything(42)
 
 
 def run_cli():
-    # args
     parser = ArgumentParser()
     parser = Trainer.add_argparse_args(parser)
     parser = LitMNIST.add_model_specific_args(parser)
@@ -111,7 +110,10 @@ def run_cli():
     model = LitMNIST(**vars(args))
 
     dm = MNISTDataModule(
-        num_workers=args.num_workers, data_dir="mnist_data", batch_size=args.batch_size
+        num_workers=args.num_workers,
+        data_dir="mnist_data",
+        batch_size=args.batch_size,
+        output_data_dir="mnist_data",
     )
 
     trainer = Trainer.from_argparse_args(args)
