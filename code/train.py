@@ -2,9 +2,10 @@ import argparse
 import os
 from pprint import pprint
 import logging
+
+import wandb
 from pytorch_lightning.loggers import WandbLogger
 
-logging.basicConfig(level=logging.DEBUG)
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything, Callback
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
@@ -13,6 +14,7 @@ from ec2_metadata import ec2_metadata as ec2metadata
 from mnist_module import LitMNIST
 from mnist_datamodule import MNISTDataModule
 
+logging.basicConfig(level=logging.DEBUG)
 seed_everything(42)
 DEBUG = False
 # INSTANCE_ACTION = 'TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && curl -H "X-aws-ec2-metadata-token: $TOKEN" –v http://169.254.169.254/latest/meta-data/spot/instance-action'  # see: https://aws.amazon.com/blogs/compute/best-practices-for-handling-ec2-spot-instance-interruptions/
@@ -28,10 +30,14 @@ class InterruptionWarning(Callback):
     ALL_GOOD = 0
     INTERRUPTION_WARNING = 1
 
+    def __init__(self,check_status_interval = 200) -> None:
+        super().__init__()
+        self.check_status_interval = check_status_interval
+
     def on_train_batch_end(
         self, trainer, pl_module: LitMNIST, batch, batch_idx, dataloader_idx
     ):
-        if batch_idx % 10 == 0:
+        if batch_idx % self.check_status_interval == 0:
             status = self._get_status()
             trainer.callback_metrics["interruption_warning"] = status
         else:
@@ -75,18 +81,20 @@ if __name__ == "__main__":
     parser.add_argument('-o','--output-data-dir', type=str, default=output_data_dir)
     parser.add_argument('--data_dir', type=str,default=os.environ["SM_CHANNEL_TRAINING"])
     parser.add_argument('--checkpoint_path', type=str, default=checkpoint_path)
-
     # fmt:on
+
+    wandb.init(project="mnist")
+    assert wandb.api.api_key is not None
 
     parser = pl.Trainer.add_argparse_args(parser)
     parser = LitMNIST.add_model_specific_args(parser)
 
-    kwargs = (
-        {"batch_size": 32, "max_epochs": 2, "gpus": 0, "hidden_dim": 128}
+    default_kwargs = (
+        {"batch_size": 32, "max_epochs": 2, "gpus": 0, "hidden_dim": 32}
         if DEBUG
         else {"default_root_dir": output_data_dir}
     )
-    args, _ = parser.parse_known_args(namespace=argparse.Namespace(**kwargs))
+    args, _ = parser.parse_known_args(namespace=argparse.Namespace(**default_kwargs))
     pprint(args.__dict__)
 
     dm = MNISTDataModule(
@@ -97,12 +105,12 @@ if __name__ == "__main__":
     )
     model = LitMNIST(**vars(args))
     args.logger = WandbLogger(
-        name="test",
+        name="test-local",
         project="mnist",
     )
 
     trainer = pl.Trainer.from_argparse_args(args)
-    trainer.callbacks.append(InterruptionWarning())
+    trainer.callbacks.append(InterruptionWarning(500))
     checkpoint_callback = ModelCheckpointOnBatchEnd(
         prefix=args.checkpoint_path,
         monitor="interruption_warning",
@@ -110,9 +118,7 @@ if __name__ == "__main__":
         mode="max",
         verbose=True,
     )
-    # trainer.checkpoint_callback = [
-    #     trainer.configure_checkpoint_callback(checkpoint_callback)
-    # ]
+
     trainer.callbacks.append(trainer.configure_checkpoint_callback(checkpoint_callback))
 
     trainer.fit(model, datamodule=dm)
