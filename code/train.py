@@ -105,7 +105,6 @@ if __name__ == "__main__":
     )
     model = LitMNIST(**vars(args))
     args.logger = WandbLogger(
-        name="test-local",
         project="mnist",
     )
 

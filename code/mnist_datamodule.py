@@ -42,13 +42,14 @@ class MNISTDataModule(LightningDataModule):
     def prepare_data(self):
 
         try:
-            os.system("tar xzf %s -C %s" % (self.data_dir+"/output.tar.gz", self.data_dir))
+            os.system("tar xzf %s -C %s" % (self.data_dir+"/output.tar.gz", self.data_dir)) #TODO(tilo): handle failure more explicitly
             MNIST(self.data_dir, train=True, download=False, transform=transform_lib.ToTensor())
             MNIST(self.data_dir, train=False, download=False, transform=transform_lib.ToTensor())
         except:
             m = MNIST(self.output_data_dir, train=True, download=True, transform=transform_lib.ToTensor())
             MNIST(self.output_data_dir, train=False, download=True, transform=transform_lib.ToTensor())
             shutil.rmtree(m.raw_folder)
+            self.data_dir = self.output_data_dir
 
     def train_dataloader(self, transforms=None):
         transforms = transforms or self.train_transforms or self._default_transforms()
